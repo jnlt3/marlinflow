@@ -81,7 +81,7 @@ def get_next_batch(batch_loader):
     return (inputs, cp, wdl, mask)
 
 
-def train_loop(model, loss, optimizer, batch_loader):
+def train_loop(model, optimizer, batch_loader):
     counter = 0
     data_points = 0
 
@@ -98,7 +98,8 @@ def train_loop(model, loss, optimizer, batch_loader):
 
         with tf.GradientTape() as tape:
             prediction = model(inputs)
-            loss_value = tf.reduce_mean(tf.square(train_val - prediction) * mask)
+            loss_value = tf.reduce_mean(
+                tf.square(train_val - prediction) * mask)
 
         grads = tape.gradient(loss_value, model.trainable_weights)
         optimizer.apply_gradients(zip(grads, model.trainable_weights))
@@ -202,6 +203,10 @@ def main():
         "--wdl", default=0, type=float, help="Win Draw Loss weight while training the neural network, calculated as eval * (1 - weight) + wdl * weight")
     parser.add_argument(
         "--epochs", default=0, type=int, help="Epochs to train the neural network for, 0 is infinite")
+    parser.add_argument(
+        "--lr", default=1e-3, type=float, help="Initial learning rate to use")
+    parser.add_argument(
+        "--k", default=0, type=float, help="lr = lr0 * exp(-k * epoch)")
     parser.add_argument("--res", action="store_true",
                         help="Enables residual layers/skipped connections in the network")
     parser.add_argument("--buckets", default=1, type=int,
@@ -227,6 +232,8 @@ def main():
     global OUT_DIR
     global WDL
     global EPOCHS
+    global LR
+    global K
     global HIDDEN
     global BATCH_SIZE
     global RECOMPILE
@@ -239,6 +246,8 @@ def main():
     OUT_DIR = args.out
     WDL = args.wdl
     EPOCHS = args.epochs
+    LR = args.lr
+    K = args.k
     HIDDEN = args.hidden
     BATCH_SIZE = args.batchsize
     RECOMPILE = args.recompile
@@ -296,11 +305,9 @@ def main():
     model.build(input_shape=(BATCH_SIZE, INPUTS))
     model.summary()
 
-    print("Initializing Loss...")
-    loss = tf.keras.losses.MeanSquaredError()
     print("Initializing Optimizer...")
     optimizer = tfa.optimizers.AdaBelief(
-        learning_rate=1e-3, amsgrad=True, rectify=False)
+        learning_rate=LR, amsgrad=True, rectify=False)
     print("Starting the training process...")
 
     param_map = {}
@@ -312,12 +319,13 @@ def main():
     f.close()
 
     for epoch in range(200):
+        optimizer.learning_rate = LR * math.exp(-epoch * K)
         print(f"epoch {epoch}")
         acc_loss = 0
         for path in files:
             print(f"reading {path}")
             open_file(batch_loader, ctypes.create_string_buffer(path))
-            loop_loss, _ = train_loop(model, loss, optimizer, batch_loader)
+            loop_loss, _ = train_loop(model, optimizer, batch_loader)
             acc_loss += loop_loss
             close_file(batch_loader)
         param_map = {}
