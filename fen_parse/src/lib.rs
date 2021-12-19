@@ -6,8 +6,7 @@ use std::io::{self, BufRead};
 use std::os::raw::c_char;
 use std::path::Path;
 use std::str::FromStr;
-use std::sync::{Arc, Mutex};
-use std::thread::JoinHandle;
+use std::sync::Arc;
 
 const INPUTS: usize = 768;
 
@@ -29,7 +28,6 @@ pub struct BatchLoader {
 
 impl BatchLoader {
     pub fn new(batch_size: usize, buckets: usize) -> Self {
-        println!("{}", num_cpus::get());
         Self {
             batch_size,
             buckets,
@@ -76,7 +74,7 @@ impl BatchLoader {
                     return false;
                 }
             }
-            let thread_sep = self.batch_size / self.threads;
+            let split_index = self.batch_size / self.threads;
             let mut board_buffer = self.board_buffer.as_slice();
             let mut cp_buffer = self.cp_buffer.as_slice();
             let mut wdl_buffer = self.wdl_buffer.as_slice();
@@ -87,13 +85,7 @@ impl BatchLoader {
             let mut masks = self.mask.as_slice();
 
             let mut handles = vec![];
-            for thread in 0..self.threads {
-                let last_thread = thread == self.threads - 1;
-                let split_index = if last_thread {
-                    board_buffer.len()
-                } else {
-                    thread_sep
-                };
+            for _ in 0..self.threads - 1 {
                 let (thread_boards, remaining_boards) = board_buffer.split_at(split_index);
                 let (thread_cps, remaining_cps) = cp_buffer.split_at(split_index);
                 let (thread_wdls, remaining_wdls) = wdl_buffer.split_at(split_index);
@@ -113,20 +105,26 @@ impl BatchLoader {
                     Arc::from(thread_cps),
                     Arc::from(thread_wdls),
                     Arc::from(write_boards),
-                    Arc::from(write_wdls),
                     Arc::from(write_cps),
+                    Arc::from(write_wdls),
                     Arc::from(write_masks),
                     self.buckets,
                 );
-                if last_thread {
-                    func();
-                } else {
-                    handles.push(std::thread::spawn(func));
-                }
+                handles.push(std::thread::spawn(func));
             }
+            Self::fill_buffer(
+                Arc::from(board_buffer),
+                Arc::from(cp_buffer),
+                Arc::from(wdl_buffer),
+                Arc::from(boards),
+                Arc::from(cps),
+                Arc::from(wdls),
+                Arc::from(masks),
+                self.buckets,
+            )();
             for handle in handles {
                 handle.join().unwrap();
-            }
+            } 
             true
         } else {
             false
@@ -165,7 +163,6 @@ impl BatchLoader {
                 let bucket = (phase * buckets / 24).min(buckets - 1);
 
                 let (board, cp, wdl) = Self::to_input_vector(board, cp_buffer[i], wdl_buffer[i]);
-
                 boards[i] = board;
                 cps[i * buckets + bucket] = cp;
                 wdls[i * buckets + bucket] = wdl;
@@ -173,43 +170,6 @@ impl BatchLoader {
             }
         }
     }
-
-    /*
-    fn fill_buffer(
-        fen_buffer: *const [ArrayString<U128>],
-        cp_buffer: *const [f32],
-        wdl_buffer: *const [f32],
-        boards: *mut [[f32; INPUTS]],
-        cps: *mut [f32],
-        wdls: *mut [f32],
-        masks: *mut [f32],
-        buckets: usize,
-    ) -> JoinHandle<()> {
-        std::thread::spawn(move || {
-            let fen_buffer = unsafe { fen_buffer.as_ref().unwrap() };
-            let cp_buffer = unsafe { cp_buffer.as_ref().unwrap() };
-            let wdl_buffer = unsafe { wdl_buffer.as_ref().unwrap() };
-
-            let boards = unsafe { boards.as_ref().unwrap() };
-            let cps = unsafe { cps.as_ref().unwrap() };
-            let wdls = unsafe { wdls.as_ref().unwrap() };
-            let masks = unsafe { masks.as_ref().unwrap() };
-            for i in 0..fen_buffer.len() {
-                let board = Board::from_str(&fen_buffer[i]).unwrap();
-
-                let phase = phase(&board);
-                let bucket = (phase * buckets / 24).min(buckets - 1);
-
-                let (board, cp, wdl) = Self::to_input_vector(board, cp_buffer[i], wdl_buffer[i]);
-
-                boards[i] = board;
-                cps[i * buckets + bucket] = cp;
-                wdls[i * buckets + bucket] = wdl;
-                masks[i * buckets + bucket] = 1.0;
-            }
-        })
-    }
-    */
 
     fn to_input_vector(board: Board, cp: f32, wdl: f32) -> ([f32; INPUTS], f32, f32) {
         let mut w_perspective = [0_f32; INPUTS as usize];
