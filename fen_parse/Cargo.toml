@@ -18,3 +18,4 @@ lto = "fat"
 
 [dependencies]
 chess = "*"
+num_cpus = "1.13.0"
