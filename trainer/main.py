@@ -7,6 +7,7 @@ import pathlib
 
 from dataloader import BatchLoader
 from model import (
+    NnBm,
     NnBoard768Cuda,
     NnBoard768,
     NnHalfKA,
@@ -15,6 +16,8 @@ from model import (
     NnHalfKPCuda,
 )
 from time import time
+
+import pytorch_ranger
 
 import torch
 from trainlog import TrainLog
@@ -85,7 +88,6 @@ def train(
                 with open(f"nn/{train_id}.json", "w") as json_file:
                     json.dump(param_map, json_file)
 
-
         optimizer.zero_grad()
         prediction = model(batch)
         expected = torch.sigmoid(batch.cp / scale) * (1 - wdl) + batch.wdl * wdl
@@ -148,13 +150,13 @@ def main():
 
     train_log = TrainLog(args.train_id)
 
-    model = NnHalfKPCuda(128).to(DEVICE)
+    model = NnBm(128).to(DEVICE)
 
     data_path = pathlib.Path(args.data_root)
     paths = list(map(str, data_path.glob("*.bin")))
     dataloader = BatchLoader(paths, model.input_feature_set(), args.batch_size)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = pytorch_ranger.Ranger(model.parameters(), lr=args.lr)
 
     train(
         model,

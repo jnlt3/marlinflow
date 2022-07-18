@@ -215,3 +215,44 @@ class NnHalfKACuda(torch.nn.Module):
 
     def input_feature_set(self) -> InputFeatureSet:
         return InputFeatureSet.HALF_KA_CUDA
+
+
+class NnBm(torch.nn.Module):
+    def __init__(self, ft_out: int):
+        super().__init__()
+        from cudasparse import DoubleFeatureTransformerSlice
+
+        self.max_features = InputFeatureSet.HALF_KA_CUDA.max_features()
+        self.ft = DoubleFeatureTransformerSlice(49152, ft_out)
+        self.fft = DoubleFeatureTransformerSlice(768, ft_out)
+        self.out = torch.nn.Linear(ft_out * 2, 1)
+
+    def forward(self, batch: Batch):
+        values = batch.values.reshape(-1, self.max_features)
+        stm_indices = batch.stm_indices.reshape(-1, self.max_features).type(
+            dtype=torch.int32
+        )
+        nstm_indices = batch.nstm_indices.reshape(-1, self.max_features).type(
+            dtype=torch.int32
+        )
+        stm_ft, nstm_ft = self.ft(
+            stm_indices,
+            values,
+            nstm_indices,
+            values,
+        )
+        v_stm_ft, v_nstm_ft = self.fft(
+            stm_indices.fmod(768), values, nstm_indices.fmod(768), values
+        )
+
+        hidden = (
+            torch.clamp(
+                torch.cat((stm_ft + v_stm_ft, nstm_ft + v_nstm_ft), dim=1), 0, 1
+            )
+            ** 2
+        )
+
+        return torch.sigmoid(self.out(hidden))
+
+    def input_feature_set(self) -> InputFeatureSet:
+        return InputFeatureSet.HALF_KA_CUDA
