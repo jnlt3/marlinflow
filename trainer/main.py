@@ -66,7 +66,8 @@ def train(
         if new_epoch:
             epoch += 1
             if epoch == lr_drop:
-                optimizer.param_groups[0]["lr"] *= 0.1
+                for param_group in optimizer.param_groups:
+                    param_group["lr"] *= 0.1
             print(
                 f"epoch {epoch}",
                 f"epoch train loss: {running_loss.item() / iterations}",
@@ -152,11 +153,29 @@ def main():
 
     model = NnBm(384).to(DEVICE)
 
+    """
+    optim = Adam(
+    [
+        {"params": model.fc.parameters(), "lr": 1e-3},
+        {"params": model.agroupoflayer.parameters()},
+        {"params": model.lastlayer.parameters(), "lr": 4e-2},
+    ],
+    lr=5e-4,
+)
+    """
+
     data_path = pathlib.Path(args.data_root)
     paths = list(map(str, data_path.glob("*.bin")))
     dataloader = BatchLoader(paths, model.input_feature_set(), args.batch_size)
 
-    optimizer = pytorch_ranger.Ranger(model.parameters(), lr=args.lr)
+    optimizer = pytorch_ranger.Ranger(
+        [
+            {"params": model.ft.parameters()},
+            {"params": model.fft.parameters()},
+            {"params": model.out.parameters(), "lr": args.lr * 2},
+        ],
+        lr=args.lr,
+    )
 
     train(
         model,

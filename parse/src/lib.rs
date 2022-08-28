@@ -53,6 +53,7 @@ export_batch_getters! {
     indices_per_feature as u32      : batch_get_indices_per_feature -> u32,
     cp_ptr                          : batch_get_cp_ptr -> *const f32,
     wdl_ptr                         : batch_get_wdl_ptr -> *const f32,
+    mask_ptr                        : batch_get_mask_ptr -> *const f32,
 }
 
 #[no_mangle]

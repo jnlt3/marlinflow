@@ -24,6 +24,7 @@ def _load_parse_lib():
     lib.batch_get_total_features.restype = ctypes.c_uint32
     lib.batch_get_cp_ptr.restype = ctypes.POINTER(ctypes.c_float)
     lib.batch_get_wdl_ptr.restype = ctypes.POINTER(ctypes.c_float)
+    lib.batch_get_mask_ptr.restype = ctypes.POINTER(ctypes.c_float)
 
     lib.file_reader_new.restype = ctypes.c_void_p
     lib.file_reader_drop.restype = None
@@ -61,6 +62,7 @@ class Batch:
     values: torch.Tensor
     cp: torch.Tensor
     wdl: torch.Tensor
+    mask: torch.Tensor
     size: int
 
 
@@ -116,6 +118,9 @@ class ParserBatch:
     def get_wdl_ptr(self) -> ctypes.pointer[ctypes.c_float]:
         return PARSE_LIB.batch_get_wdl_ptr(self._ptr)
 
+    def get_mask_ptr(self) -> ctypes.pointer[ctypes.c_float]:
+        return PARSE_LIB.batch_get_mask_ptr(self._ptr)
+
     def to_pytorch_batch(self, device: torch.device) -> Batch:
         def to_pytorch(array: np.ndarray) -> torch.Tensor:
             tch_array = torch.from_numpy(array)
@@ -146,8 +151,11 @@ class ParserBatch:
         wdl = to_pytorch(
             np.ctypeslib.as_array(self.get_wdl_ptr(), shape=(batch_len, 1))
         )
+        mask = to_pytorch(
+            np.ctypeslib.as_array(self.get_mask_ptr(), shape=(batch_len, 8))
+        )
 
-        return Batch(boards_stm, boards_nstm, values, cp, wdl, batch_len)
+        return Batch(boards_stm, boards_nstm, values, cp, wdl, mask, batch_len)
 
 
 class ParserFileReader:

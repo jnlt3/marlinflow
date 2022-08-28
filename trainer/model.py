@@ -225,7 +225,7 @@ class NnBm(torch.nn.Module):
         self.max_features = InputFeatureSet.HALF_KA_CUDA.max_features()
         self.ft = DoubleFeatureTransformerSlice(49152, ft_out)
         self.fft = DoubleFeatureTransformerSlice(768, ft_out)
-        self.out = torch.nn.Linear(ft_out * 2, 1)
+        self.out = torch.nn.Linear(ft_out * 2, 8)
 
     def forward(self, batch: Batch):
         values = batch.values.reshape(-1, self.max_features)
@@ -252,7 +252,7 @@ class NnBm(torch.nn.Module):
             ** 2
         )
 
-        return torch.sigmoid(self.out(hidden))
+        return torch.sum(torch.sigmoid(self.out(hidden)) * batch.mask, dim=1).unsqueeze(1)
 
     def input_feature_set(self) -> InputFeatureSet:
         return InputFeatureSet.HALF_KA_CUDA

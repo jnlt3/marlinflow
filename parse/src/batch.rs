@@ -1,3 +1,6 @@
+use cozy_chess::Board;
+
+const BUCKETS: usize = 8;
 pub struct Batch {
     // The maximum number of entries
     capacity: usize,
@@ -12,6 +15,7 @@ pub struct Batch {
 
     cp: Box<[f32]>,
     wdl: Box<[f32]>,
+    mask: Box<[f32]>,
 
     // The number of entries actually written
     entries: usize,
@@ -31,15 +35,22 @@ impl Batch {
             values: vec![1.0; capacity * max_features].into_boxed_slice(),
             cp: vec![0_f32; capacity].into_boxed_slice(),
             wdl: vec![0_f32; capacity].into_boxed_slice(),
+            mask: vec![0_f32; capacity * BUCKETS].into_boxed_slice(),
             entries: 0,
         }
     }
 
-    pub fn make_entry(&mut self, cp: f32, wdl: f32) -> EntryFeatureWriter {
+    pub fn make_entry(&mut self, board: &Board, cp: f32, wdl: f32) -> EntryFeatureWriter {
         let index_in_batch = self.entries;
         self.entries += 1;
         self.cp[index_in_batch] = cp;
         self.wdl[index_in_batch] = wdl;
+
+        let mut buckets = [0.0; BUCKETS];
+        let bucket = (board.occupied().popcnt() / 4).min(7);
+        buckets[bucket as usize] = 1.0;
+        (&mut self.mask[index_in_batch * BUCKETS..index_in_batch * BUCKETS + BUCKETS])
+            .copy_from_slice(&buckets);
         EntryFeatureWriter {
             batch: self,
             index_in_batch,
@@ -85,6 +96,10 @@ impl Batch {
 
     pub fn wdl_ptr(&self) -> *const f32 {
         &self.wdl[0]
+    }
+
+    pub fn mask_ptr(&self) -> *const f32 {
+        &self.mask[0]
     }
 }
 

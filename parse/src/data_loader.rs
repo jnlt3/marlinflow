@@ -101,7 +101,7 @@ pub fn read_batch_into<F: InputFeatureSet>(reader: &mut FileReader, batch: &mut 
     batch.clear();
     for annotated in reader.take(batch.capacity()) {
         let (cp, wdl) = annotated.relative_value();
-        let entry = batch.make_entry(cp, wdl);
+        let entry = batch.make_entry(&annotated.board, cp, wdl);
         F::add_features(annotated.board, entry);
     }
     batch.capacity() == batch.len()
