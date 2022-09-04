@@ -44,9 +44,11 @@ class InputFeatureSet(IntEnum):
     BOARD_768 = 0
     HALF_KP = 1
     HALF_KA = 2
-    BOARD_768_CUDA = 3
-    HALF_KP_CUDA = 4
-    HALF_KA_CUDA = 5
+    HALF_KA_T = 3
+    BOARD_768_CUDA = 4
+    HALF_KP_CUDA = 5
+    HALF_KA_CUDA = 6
+    HALF_KA_T_CUDA = 7
 
     def max_features(self) -> int:
         return PARSE_LIB.input_feature_set_get_max_features(self)

@@ -252,7 +252,9 @@ class NnBm(torch.nn.Module):
             ** 2
         )
 
-        return torch.sum(torch.sigmoid(self.out(hidden)) * batch.mask, dim=1).unsqueeze(1)
+        return torch.sum(torch.sigmoid(self.out(hidden)) * batch.mask, dim=1).unsqueeze(
+            1
+        )
 
     def input_feature_set(self) -> InputFeatureSet:
         return InputFeatureSet.HALF_KA_CUDA

@@ -5,11 +5,14 @@ use crate::batch::EntryFeatureWriter;
 mod board_768;
 mod half_ka;
 mod half_kp;
+mod half_ka_t;
 
 pub use board_768::Board768;
 pub use board_768::Board768Cuda;
 pub use half_ka::HalfKa;
 pub use half_ka::HalfKaCuda;
+pub use half_ka_t::HalfKaT;
+pub use half_ka_t::HalfKaTCuda;
 pub use half_kp::HalfKp;
 pub use half_kp::HalfKpCuda;
 

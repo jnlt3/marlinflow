@@ -4,7 +4,8 @@ use std::os::raw::c_char;
 use batch::Batch;
 use data_loader::FileReader;
 use input_features::{
-    Board768, Board768Cuda, HalfKa, HalfKaCuda, HalfKp, HalfKpCuda, InputFeatureSet,
+    Board768, Board768Cuda, HalfKa, HalfKaCuda, HalfKaT, HalfKaTCuda, HalfKp, HalfKpCuda,
+    InputFeatureSet,
 };
 
 mod batch;
@@ -80,9 +81,11 @@ pub enum InputFeatureSetType {
     Board768,
     HalfKp,
     HalfKa,
+    HalfKaT,
     Board768Cuda,
     HalfKpCuda,
     HalfKaCuda,
+    HalfKaTCuda,
 }
 
 #[no_mangle]
@@ -93,9 +96,11 @@ pub unsafe extern "C" fn input_feature_set_get_max_features(
         InputFeatureSetType::Board768 => Board768::MAX_FEATURES,
         InputFeatureSetType::HalfKp => HalfKp::MAX_FEATURES,
         InputFeatureSetType::HalfKa => HalfKa::MAX_FEATURES,
+        InputFeatureSetType::HalfKaT => HalfKaT::MAX_FEATURES,
         InputFeatureSetType::Board768Cuda => Board768Cuda::MAX_FEATURES,
         InputFeatureSetType::HalfKpCuda => HalfKpCuda::MAX_FEATURES,
         InputFeatureSetType::HalfKaCuda => HalfKaCuda::MAX_FEATURES,
+        InputFeatureSetType::HalfKaTCuda => HalfKaTCuda::MAX_FEATURES,
     };
     max_features as u32
 }
@@ -108,9 +113,11 @@ pub unsafe extern "C" fn input_feature_set_get_indices_per_feature(
         InputFeatureSetType::Board768 => Board768::INDICES_PER_FEATURE,
         InputFeatureSetType::HalfKp => HalfKp::INDICES_PER_FEATURE,
         InputFeatureSetType::HalfKa => HalfKa::INDICES_PER_FEATURE,
+        InputFeatureSetType::HalfKaT => HalfKaT::INDICES_PER_FEATURE,
         InputFeatureSetType::Board768Cuda => Board768Cuda::INDICES_PER_FEATURE,
         InputFeatureSetType::HalfKpCuda => HalfKpCuda::INDICES_PER_FEATURE,
         InputFeatureSetType::HalfKaCuda => HalfKaCuda::INDICES_PER_FEATURE,
+        InputFeatureSetType::HalfKaTCuda => HalfKaTCuda::INDICES_PER_FEATURE,
     };
     indices_per_feature as u32
 }
@@ -127,6 +134,7 @@ pub unsafe extern "C" fn read_batch_into(
         InputFeatureSetType::Board768 => data_loader::read_batch_into::<Board768>(reader, batch),
         InputFeatureSetType::HalfKp => data_loader::read_batch_into::<HalfKp>(reader, batch),
         InputFeatureSetType::HalfKa => data_loader::read_batch_into::<HalfKa>(reader, batch),
+        InputFeatureSetType::HalfKaT => data_loader::read_batch_into::<HalfKaT>(reader, batch),
         InputFeatureSetType::Board768Cuda => {
             data_loader::read_batch_into::<Board768Cuda>(reader, batch)
         }
@@ -135,6 +143,9 @@ pub unsafe extern "C" fn read_batch_into(
         }
         InputFeatureSetType::HalfKaCuda => {
             data_loader::read_batch_into::<HalfKaCuda>(reader, batch)
+        }
+        InputFeatureSetType::HalfKaTCuda => {
+            data_loader::read_batch_into::<HalfKaTCuda>(reader, batch)
         }
     }
 }
