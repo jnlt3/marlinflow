@@ -222,9 +222,9 @@ class NnBm(torch.nn.Module):
         super().__init__()
         from cudasparse import DoubleFeatureTransformerSlice
 
-        self.max_features = InputFeatureSet.HALF_KA_CUDA.max_features()
-        self.ft = DoubleFeatureTransformerSlice(49152, ft_out)
-        self.fft = DoubleFeatureTransformerSlice(768, ft_out)
+        self.max_features = InputFeatureSet.HALF_KA_T_CUDA.max_features()
+        self.ft = DoubleFeatureTransformerSlice(57344, ft_out)
+        self.fft = DoubleFeatureTransformerSlice(896, ft_out)
         self.out = torch.nn.Linear(ft_out * 2, 8)
 
     def forward(self, batch: Batch):
@@ -242,7 +242,7 @@ class NnBm(torch.nn.Module):
             values,
         )
         v_stm_ft, v_nstm_ft = self.fft(
-            stm_indices.fmod(768), values, nstm_indices.fmod(768), values
+            stm_indices.fmod(896), values, nstm_indices.fmod(896), values
         )
 
         hidden = (
@@ -257,4 +257,4 @@ class NnBm(torch.nn.Module):
         )
 
     def input_feature_set(self) -> InputFeatureSet:
-        return InputFeatureSet.HALF_KA_CUDA
+        return InputFeatureSet.HALF_KA_T_CUDA
