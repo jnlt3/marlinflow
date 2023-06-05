@@ -1,3 +1,5 @@
+#![allow(unused)] // utils module
+
 pub fn serialize_dense_i8(weights: &[Box<[f32]>], bin: &mut Vec<u8>, scale: f32) {
     for weights in weights {
         for &weight in weights.iter() {
