@@ -55,19 +55,22 @@ pub fn run(options: Options) -> Result<()> {
 
     let mut remaining = positions;
     let mut blocks_shuffled = 0;
-    std::thread::spawn(move || loop {
-        if remaining == 0 {
-            break;
+    std::thread::spawn({
+        let output_dir = output_dir.to_owned();
+        move || loop {
+            if remaining == 0 {
+                break;
+            }
+            let count = remaining.min(options.block_size);
+            remaining -= count;
+            let mut data = read(&mut dataset, count).unwrap();
+            data.shuffle(&mut thread_rng());
+            let mut f = tempfile::tempfile_in(&output_dir).unwrap();
+            f.write_all(bytemuck::cast_slice(&data)).unwrap();
+            send.send(f).unwrap();
+            blocks_shuffled += 1;
+            println!("blocks: {blocks_shuffled}/{block_count}");
         }
-        let count = remaining.min(options.block_size);
-        remaining -= count;
-        let mut data = read(&mut dataset, count).unwrap();
-        data.shuffle(&mut thread_rng());
-        let mut f = tempfile::tempfile().unwrap();
-        f.write_all(bytemuck::cast_slice(&data)).unwrap();
-        send.send(f).unwrap();
-        blocks_shuffled += 1;
-        println!("blocks: {blocks_shuffled}/{block_count}");
     });
 
     let mut items = block_count;
@@ -82,16 +85,19 @@ pub fn run(options: Options) -> Result<()> {
         let (nsend, nrecv) = std::sync::mpsc::sync_channel(options.group_size as usize);
         let mut iter = recv.into_iter();
         let mut progress = 0;
-        std::thread::spawn(move || loop {
-            let mut files: Vec<_> = (&mut iter).take(options.group_size as usize).collect();
-            if files.is_empty() {
-                break;
+        std::thread::spawn({
+            let output_dir = output_dir.to_owned();
+            move || loop {
+                let mut files: Vec<_> = (&mut iter).take(options.group_size as usize).collect();
+                if files.is_empty() {
+                    break;
+                }
+                let mut to = tempfile::tempfile_in(&output_dir).unwrap();
+                interleave(&mut to, &mut files, |_, _| {}).unwrap();
+                nsend.send(to).unwrap();
+                progress += 1;
+                println!("lvl. {level}: {progress}/{items}");
             }
-            let mut to = tempfile::tempfile().unwrap();
-            interleave(&mut to, &mut files, |_, _| {}).unwrap();
-            nsend.send(to).unwrap();
-            progress += 1;
-            println!("lvl. {level}: {progress}/{items}");
         });
 
         recv = nrecv;
