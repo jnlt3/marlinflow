@@ -67,7 +67,7 @@ To train a network, you will need a large amount of training data. There are a n
 To convert a file in the legacy text format into a data file, use marlinflow-utils, which is built in much the same way as the parser:
 ```bash
 cd utils
-cargo rustc --release -- -C target-cpu-native
+cargo rustc --release -- -C target-cpu=native
 ```
 The resulting binary will be in `target/release/`, and can be invoked as follows:
 ```bash
