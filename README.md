@@ -15,7 +15,7 @@ This repo is or was relied upon by a number of other engines, including but not 
 
 ```bash
 cd parse
-cargo rustc --release -- -C target-cpu-native
+cargo rustc --release -- -C target-cpu=native
 ```
 
 3. Locate the resulting `.so`/`.dll` in the `target/release/` directory and move it to the `trainer/` directory, renamed as libparse.so/libparse.dll.
@@ -71,7 +71,7 @@ cargo rustc --release -- -C target-cpu=native
 ```
 The resulting binary will be in `target/release/`, and can be invoked as follows:
 ```bash
-target/release/marlinflow-utils txt-to-data <INPUT.txt> --output <OUTPUT.bin>
+target/release/marlinflow-utils txt-to-data INPUT.txt --output OUTPUT.bin
 ```
 
 # Legacy Text Format
