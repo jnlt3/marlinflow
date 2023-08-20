@@ -1,0 +1,27 @@
+/home/doruk/ProgrammingProjects/marlinflow/trainer/venv/lib/python3.11/site-packages/pytorch_ranger/ranger.py:172: UserWarning: This overload of addcmul_ is deprecated:
+	addcmul_(Number value, Tensor tensor1, Tensor tensor2)
+Consider using one of the following signatures instead:
+	addcmul_(Tensor tensor1, Tensor tensor2, *, Number value) (Triggered internally at ../torch/csrc/utils/python_arg_parser.cpp:1485.)
+  exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
+Traceback (most recent call last):
+  File "/home/doruk/ProgrammingProjects/marlinflow/trainer/main.py", line 8, in <module>
+    from dataloader import BatchLoader
+  File "/home/doruk/ProgrammingProjects/marlinflow/trainer/dataloader.py", line 10, in <module>
+    import torch
+ModuleNotFoundError: No module named 'torch'
+Traceback (most recent call last):
+  File "/home/doruk/ProgrammingProjects/marlinflow/trainer/main.py", line 8, in <module>
+    from dataloader import BatchLoader
+  File "/home/doruk/ProgrammingProjects/marlinflow/trainer/dataloader.py", line 10, in <module>
+    import torch
+ModuleNotFoundError: No module named 'torch'
+/home/doruk/ProgrammingProjects/marlinflow/trainer/venv/lib/python3.11/site-packages/pytorch_ranger/ranger.py:172: UserWarning: This overload of addcmul_ is deprecated:
+	addcmul_(Number value, Tensor tensor1, Tensor tensor2)
+Consider using one of the following signatures instead:
+	addcmul_(Tensor tensor1, Tensor tensor2, *, Number value) (Triggered internally at ../torch/csrc/utils/python_arg_parser.cpp:1485.)
+  exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)
+/home/doruk/ProgrammingProjects/marlinflow/trainer/venv/lib/python3.11/site-packages/pytorch_ranger/ranger.py:172: UserWarning: This overload of addcmul_ is deprecated:
+	addcmul_(Number value, Tensor tensor1, Tensor tensor2)
+Consider using one of the following signatures instead:
+	addcmul_(Tensor tensor1, Tensor tensor2, *, Number value) (Triggered internally at ../torch/csrc/utils/python_arg_parser.cpp:1485.)
+  exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)

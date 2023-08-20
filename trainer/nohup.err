@@ -1,0 +1,6 @@
+sudo: a password is required
+oruk/ProgrammingProjects/marlinflow/trainer/venv/lib/python3.11/site-packages/pytorch_ranger/ranger.py:172: UserWarning: This overload of addcmul_ is deprecated:
+	addcmul_(Number value, Tensor tensor1, Tensor tensor2)
+Consider using one of the following signatures instead:
+	addcmul_(Tensor tensor1, Tensor tensor2, *, Number value) (Triggered internally at ../torch/csrc/utils/python_arg_parser.cpp:1485.)
+  exp_avg_sq.mul_(beta2).addcmul_(1 - beta2, grad, grad)

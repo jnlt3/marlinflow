@@ -29,7 +29,7 @@ def main():
         name = pathlib.Path(f).name.split(".")[-2]
         plt.plot(epochs, losses, label=name)
     plt.legend()
-    plt.show()
+    plt.savefig("./graph.svg")
 
 
 if __name__ == "__main__":

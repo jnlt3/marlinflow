@@ -1,0 +1,97 @@
+diff --git a/parse/src/input_features/mod.rs b/parse/src/input_features/mod.rs
+index f4b6868..115c073 100644
+--- a/parse/src/input_features/mod.rs
++++ b/parse/src/input_features/mod.rs
+@@ -4,8 +4,9 @@ use crate::batch::EntryFeatureWriter;
+ 
+ mod board_768;
+ mod half_ka;
+-mod half_kp;
+ mod half_ka_t;
++pub mod half_kat_mirror;
++mod half_kp;
+ 
+ pub use board_768::Board768;
+ pub use board_768::Board768Cuda;
+@@ -13,6 +14,8 @@ pub use half_ka::HalfKa;
+ pub use half_ka::HalfKaCuda;
+ pub use half_ka_t::HalfKaT;
+ pub use half_ka_t::HalfKaTCuda;
++pub use half_kat_mirror::HalfKaTMirror;
++pub use half_kat_mirror::HalfKaTMirrorCuda;
+ pub use half_kp::HalfKp;
+ pub use half_kp::HalfKpCuda;
+ 
+diff --git a/parse/src/lib.rs b/parse/src/lib.rs
+index 3f82e44..97b65be 100644
+--- a/parse/src/lib.rs
++++ b/parse/src/lib.rs
+@@ -4,8 +4,8 @@ use std::os::raw::c_char;
+ use batch::Batch;
+ use data_loader::FileReader;
+ use input_features::{
+-    Board768, Board768Cuda, HalfKa, HalfKaCuda, HalfKaT, HalfKaTCuda, HalfKp, HalfKpCuda,
+-    InputFeatureSet,
++    Board768, Board768Cuda, HalfKa, HalfKaCuda, HalfKaT, HalfKaTCuda, HalfKaTMirror,
++    HalfKaTMirrorCuda, HalfKp, HalfKpCuda, InputFeatureSet,
+ };
+ 
+ mod batch;
+@@ -82,10 +82,12 @@ pub enum InputFeatureSetType {
+     HalfKp,
+     HalfKa,
+     HalfKaT,
++    HalfKaTMirror,
+     Board768Cuda,
+     HalfKpCuda,
+     HalfKaCuda,
+     HalfKaTCuda,
++    HalfKaTMirrorCuda,
+ }
+ 
+ #[no_mangle]
+@@ -97,10 +99,12 @@ pub unsafe extern "C" fn input_feature_set_get_max_features(
+         InputFeatureSetType::HalfKp => HalfKp::MAX_FEATURES,
+         InputFeatureSetType::HalfKa => HalfKa::MAX_FEATURES,
+         InputFeatureSetType::HalfKaT => HalfKaT::MAX_FEATURES,
++        InputFeatureSetType::HalfKaTMirror => HalfKaTMirror::MAX_FEATURES,
+         InputFeatureSetType::Board768Cuda => Board768Cuda::MAX_FEATURES,
+         InputFeatureSetType::HalfKpCuda => HalfKpCuda::MAX_FEATURES,
+         InputFeatureSetType::HalfKaCuda => HalfKaCuda::MAX_FEATURES,
+         InputFeatureSetType::HalfKaTCuda => HalfKaTCuda::MAX_FEATURES,
++        InputFeatureSetType::HalfKaTMirrorCuda => HalfKaTMirrorCuda::MAX_FEATURES,
+     };
+     max_features as u32
+ }
+@@ -114,10 +118,12 @@ pub unsafe extern "C" fn input_feature_set_get_indices_per_feature(
+         InputFeatureSetType::HalfKp => HalfKp::INDICES_PER_FEATURE,
+         InputFeatureSetType::HalfKa => HalfKa::INDICES_PER_FEATURE,
+         InputFeatureSetType::HalfKaT => HalfKaT::INDICES_PER_FEATURE,
++        InputFeatureSetType::HalfKaTMirror => HalfKaTCuda::INDICES_PER_FEATURE,
+         InputFeatureSetType::Board768Cuda => Board768Cuda::INDICES_PER_FEATURE,
+         InputFeatureSetType::HalfKpCuda => HalfKpCuda::INDICES_PER_FEATURE,
+         InputFeatureSetType::HalfKaCuda => HalfKaCuda::INDICES_PER_FEATURE,
+         InputFeatureSetType::HalfKaTCuda => HalfKaTCuda::INDICES_PER_FEATURE,
++        InputFeatureSetType::HalfKaTMirrorCuda => HalfKaTMirrorCuda::INDICES_PER_FEATURE,
+     };
+     indices_per_feature as u32
+ }
+@@ -135,6 +141,9 @@ pub unsafe extern "C" fn read_batch_into(
+         InputFeatureSetType::HalfKp => data_loader::read_batch_into::<HalfKp>(reader, batch),
+         InputFeatureSetType::HalfKa => data_loader::read_batch_into::<HalfKa>(reader, batch),
+         InputFeatureSetType::HalfKaT => data_loader::read_batch_into::<HalfKaT>(reader, batch),
++        InputFeatureSetType::HalfKaTMirror => {
++            data_loader::read_batch_into::<HalfKaTMirror>(reader, batch)
++        }
+         InputFeatureSetType::Board768Cuda => {
+             data_loader::read_batch_into::<Board768Cuda>(reader, batch)
+         }
+@@ -147,5 +156,8 @@ pub unsafe extern "C" fn read_batch_into(
+         InputFeatureSetType::HalfKaTCuda => {
+             data_loader::read_batch_into::<HalfKaTCuda>(reader, batch)
+         }
++        InputFeatureSetType::HalfKaTMirrorCuda => {
++            data_loader::read_batch_into::<HalfKaTMirrorCuda>(reader, batch)
++        }
+     }
+ }
