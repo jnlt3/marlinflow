@@ -234,7 +234,7 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "cozy-chess",
- "marlinformat",
+ "marlinformat 0.1.0",
  "rand",
  "serde",
  "serde_json",
@@ -245,6 +245,15 @@ dependencies = [
 [[package]]
 name = "marlinformat"
 version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "cozy-chess",
+]
+
+[[package]]
+name = "marlinformat"
+version = "0.1.0"
+source = "git+https://github.com/jnlt3/marlinflow#61889794e5a91e0ea4632cf4071b4cab9fc55590"
 dependencies = [
  "bytemuck",
  "cozy-chess",
@@ -316,7 +325,7 @@ dependencies = [
  "bytemuck",
  "cozy-chess",
  "cozy-syzygy",
- "marlinformat",
+ "marlinformat 0.1.0",
  "rayon",
 ]
 
@@ -438,6 +447,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3acd125665422973a33ac9d3dd2df85edad0f4ae9b00dafb1a05e43a9f5ef8e7"
 dependencies = [
  "winapi",
+]
+
+[[package]]
+name = "repair"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "cozy-chess",
+ "marlinformat 0.1.0 (git+https://github.com/jnlt3/marlinflow)",
 ]
 
 [[package]]

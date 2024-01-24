@@ -4,6 +4,7 @@ members = [
     "parse",
     "utils",
     "marlinformat",
+    "repair"
 ]
 
 [profile.release]

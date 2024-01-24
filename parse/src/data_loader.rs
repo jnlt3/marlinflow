@@ -58,12 +58,11 @@ impl FileReader {
             .par_iter()
             .map(|packed| {
                 let (board, cp, wdl, _) = packed.unpack()?;
-                let cp = cp as f32;
-                let wdl = wdl as f32 / 2.0;
-
-                if cp.abs() > 3000.0 {
+                if cp.abs() > 3000 {
                     return None;
                 }
+                let cp = cp as f32;
+                let wdl = wdl as f32 / 2.0;
 
                 Some(AnnotatedBoard { board, cp, wdl })
             })
