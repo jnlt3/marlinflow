@@ -8,3 +8,4 @@ edition = "2021"
 marlinformat = { git = "https://github.com/jnlt3/marlinflow" }
 bytemuck = "1.10.0"
 cozy-chess = "0.2"
+rand = "0.8.5"

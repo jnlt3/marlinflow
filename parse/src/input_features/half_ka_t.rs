@@ -41,10 +41,10 @@ pub fn threats(board: &Board, threats_of: Color) -> BitBoard {
     ((pawn_attacks & pieces) | (minor_attacks & majors) | (rook_attacks & queens)) & n_color
 }
 
-pub struct HalfKaT;
-pub struct HalfKaTCuda;
+pub struct HalfKat;
+pub struct HalfKatCuda;
 
-impl InputFeatureSet for HalfKaT {
+impl InputFeatureSet for HalfKat {
     const MAX_FEATURES: usize = 64;
     const INDICES_PER_FEATURE: usize = 2;
 
@@ -73,7 +73,7 @@ impl InputFeatureSet for HalfKaT {
     }
 }
 
-impl InputFeatureSet for HalfKaTCuda {
+impl InputFeatureSet for HalfKatCuda {
     const MAX_FEATURES: usize = 64;
     const INDICES_PER_FEATURE: usize = 1;
 

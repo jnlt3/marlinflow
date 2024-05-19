@@ -41,10 +41,10 @@ pub fn threats(board: &Board, threats_of: Color) -> BitBoard {
     ((pawn_attacks & pieces) | (minor_attacks & majors) | (rook_attacks & queens)) & n_color
 }
 
-pub struct HalfKatMirror;
-pub struct HalfKatMirrorCuda;
+pub struct HalfKaxtMirror;
+pub struct HalfKaxtMirrorCuda;
 
-impl InputFeatureSet for HalfKatMirror {
+impl InputFeatureSet for HalfKaxtMirror {
     const MAX_FEATURES: usize = 64;
     const INDICES_PER_FEATURE: usize = 2;
 
@@ -59,21 +59,18 @@ impl InputFeatureSet for HalfKatMirror {
             let threats = threats(&board, !color);
             for &piece in &Piece::ALL {
                 for square in board.pieces(piece) & board.colors(color) {
-                    let stm_feature = feature(stm, stm_king, color, piece, square);
-                    let nstm_feature = feature(!stm, nstm_king, color, piece, square);
+                    let stm_feature =
+                        feature(stm, stm_king, color, piece, square, threats.has(square));
+                    let nstm_feature =
+                        feature(!stm, nstm_king, color, piece, square, threats.has(square));
                     sparse_entry.add_feature(stm_feature as i64, nstm_feature as i64);
                 }
-            }
-            for square in threats {
-                let stm_feature = threat_feature(stm, stm_king, color, square);
-                let nstm_feature = threat_feature(!stm, nstm_king, color, square);
-                sparse_entry.add_feature(stm_feature as i64, nstm_feature as i64);
             }
         }
     }
 }
 
-impl InputFeatureSet for HalfKatMirrorCuda {
+impl InputFeatureSet for HalfKaxtMirrorCuda {
     const MAX_FEATURES: usize = 64;
     const INDICES_PER_FEATURE: usize = 1;
 
@@ -88,15 +85,15 @@ impl InputFeatureSet for HalfKatMirrorCuda {
             let threats = threats(&board, !color);
             for &piece in &Piece::ALL {
                 for square in board.pieces(piece) & board.colors(color) {
-                    let stm_feature = feature(stm, stm_king, color, piece, square);
-                    let nstm_feature = feature(!stm, nstm_king, color, piece, square);
+                    let stm_feature = feature(stm, stm_king, color, piece, square, false);
+                    let nstm_feature = feature(!stm, nstm_king, color, piece, square, false);
                     cuda_entry.add_feature(stm_feature as i64, nstm_feature as i64);
+                    if threats.has(square) {
+                        let stm_feature = feature(stm, stm_king, color, piece, square, true);
+                        let nstm_feature = feature(!stm, nstm_king, color, piece, square, true);
+                        cuda_entry.add_feature(stm_feature as i64, nstm_feature as i64);
+                    }
                 }
-            }
-            for square in threats {
-                let stm_feature = threat_feature(stm, stm_king, color, square);
-                let nstm_feature = threat_feature(!stm, nstm_king, color, square);
-                cuda_entry.add_feature(stm_feature as i64, nstm_feature as i64);
             }
         }
     }
@@ -105,26 +102,15 @@ impl InputFeatureSet for HalfKatMirrorCuda {
 fn king_square_to_index(sq: Square) -> usize {
     sq.file() as usize * 8 + sq.rank() as usize
 }
- 
-fn feature(perspective: Color, king: Square, color: Color, piece: Piece, square: Square) -> usize {
-    let flip_file = (king.file() as usize) > File::D as usize;
-    let (mut king, mut square, color) = match perspective {
-        Color::White => (king, square, color),
-        Color::Black => (king.flip_rank(), square.flip_rank(), !color),
-    };
-    if flip_file {
-        king = king.flip_file();
-        square = square.flip_file();
-    }
-    let mut index = 0;
-    index = index * Square::NUM / 2 + king_square_to_index(king);
-    index = index * Color::NUM + color as usize;
-    index = index * (Piece::NUM + 1) + piece as usize;
-    index = index * Square::NUM + square as usize;
-    index
-}
 
-fn threat_feature(perspective: Color, king: Square, color: Color, square: Square) -> usize {
+fn feature(
+    perspective: Color,
+    king: Square,
+    color: Color,
+    piece: Piece,
+    square: Square,
+    as_threat: bool,
+) -> usize {
     let flip_file = (king.file() as usize) > File::D as usize;
     let (mut king, mut square, color) = match perspective {
         Color::White => (king, square, color),
@@ -134,10 +120,21 @@ fn threat_feature(perspective: Color, king: Square, color: Color, square: Square
         king = king.flip_file();
         square = square.flip_file();
     }
+    let piece_idx = if as_threat {
+        match piece {
+            Piece::Knight => Piece::NUM,
+            Piece::Bishop => Piece::NUM + 1,
+            Piece::Rook => Piece::NUM + 2,
+            Piece::Queen => Piece::NUM + 3,
+            _ => unreachable!(),
+        }
+    } else {
+        piece as usize
+    };
     let mut index = 0;
     index = index * Square::NUM / 2 + king_square_to_index(king);
     index = index * Color::NUM + color as usize;
-    index = index * (Piece::NUM + 1) + Piece::NUM;
+    index = index * (Piece::NUM + 4) + piece_idx;
     index = index * Square::NUM + square as usize;
     index
 }

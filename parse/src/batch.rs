@@ -47,7 +47,9 @@ impl Batch {
         self.wdl[index_in_batch] = wdl;
 
         let mut buckets = [0.0; BUCKETS];
-        let bucket = (board.occupied().popcnt() / 4).min(7);
+        //let bucket = (board.occupied().popcnt() / 4).min(7);
+        let pc = board.occupied().popcnt();
+        let bucket = (63 - pc) * (32 - pc) / 225;
         buckets[bucket as usize] = 1.0;
         (&mut self.mask[index_in_batch * BUCKETS..index_in_batch * BUCKETS + BUCKETS])
             .copy_from_slice(&buckets);

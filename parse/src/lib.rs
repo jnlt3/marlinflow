@@ -4,8 +4,9 @@ use std::os::raw::c_char;
 use batch::Batch;
 use data_loader::FileReader;
 use input_features::{
-    Board768, Board768Cuda, HalfKa, HalfKaCuda, HalfKaT, HalfKaTCuda, HalfKaTMirror,
-    HalfKaTMirrorCuda, HalfKp, HalfKpCuda, InputFeatureSet,
+    Board768, Board768Cuda, HalfKa, HalfKaCuda, HalfKat, HalfKatCuda, HalfKatMirror,
+    HalfKatMirrorCuda, HalfKatoMirror, HalfKatoMirrorCuda, HalfKaxtMirror, HalfKaxtMirrorCuda,
+    HalfKp, HalfKpCuda, InputFeatureSet,
 };
 
 mod batch;
@@ -81,13 +82,17 @@ pub enum InputFeatureSetType {
     Board768,
     HalfKp,
     HalfKa,
-    HalfKaT,
-    HalfKaTMirror,
+    HalfKat,
+    HalfKatMirror,
+    HalfKaxtMirror,
     Board768Cuda,
     HalfKpCuda,
     HalfKaCuda,
-    HalfKaTCuda,
-    HalfKaTMirrorCuda,
+    HalfKatCuda,
+    HalfKatMirrorCuda,
+    HalfKaxtMirrorCuda,
+    HalfKatoMirror,
+    HalfKatoMirrorCuda,
 }
 
 #[no_mangle]
@@ -98,13 +103,17 @@ pub unsafe extern "C" fn input_feature_set_get_max_features(
         InputFeatureSetType::Board768 => Board768::MAX_FEATURES,
         InputFeatureSetType::HalfKp => HalfKp::MAX_FEATURES,
         InputFeatureSetType::HalfKa => HalfKa::MAX_FEATURES,
-        InputFeatureSetType::HalfKaT => HalfKaT::MAX_FEATURES,
-        InputFeatureSetType::HalfKaTMirror => HalfKaTMirror::MAX_FEATURES,
+        InputFeatureSetType::HalfKat => HalfKat::MAX_FEATURES,
+        InputFeatureSetType::HalfKatMirror => HalfKatMirror::MAX_FEATURES,
         InputFeatureSetType::Board768Cuda => Board768Cuda::MAX_FEATURES,
         InputFeatureSetType::HalfKpCuda => HalfKpCuda::MAX_FEATURES,
         InputFeatureSetType::HalfKaCuda => HalfKaCuda::MAX_FEATURES,
-        InputFeatureSetType::HalfKaTCuda => HalfKaTCuda::MAX_FEATURES,
-        InputFeatureSetType::HalfKaTMirrorCuda => HalfKaTMirrorCuda::MAX_FEATURES,
+        InputFeatureSetType::HalfKatCuda => HalfKatCuda::MAX_FEATURES,
+        InputFeatureSetType::HalfKatMirrorCuda => HalfKatMirrorCuda::MAX_FEATURES,
+        InputFeatureSetType::HalfKaxtMirror => HalfKaxtMirrorCuda::MAX_FEATURES,
+        InputFeatureSetType::HalfKaxtMirrorCuda => HalfKaxtMirrorCuda::MAX_FEATURES,
+        InputFeatureSetType::HalfKatoMirror => HalfKatoMirror::MAX_FEATURES,
+        InputFeatureSetType::HalfKatoMirrorCuda => HalfKatoMirrorCuda::MAX_FEATURES,
     };
     max_features as u32
 }
@@ -117,13 +126,17 @@ pub unsafe extern "C" fn input_feature_set_get_indices_per_feature(
         InputFeatureSetType::Board768 => Board768::INDICES_PER_FEATURE,
         InputFeatureSetType::HalfKp => HalfKp::INDICES_PER_FEATURE,
         InputFeatureSetType::HalfKa => HalfKa::INDICES_PER_FEATURE,
-        InputFeatureSetType::HalfKaT => HalfKaT::INDICES_PER_FEATURE,
-        InputFeatureSetType::HalfKaTMirror => HalfKaTCuda::INDICES_PER_FEATURE,
+        InputFeatureSetType::HalfKat => HalfKat::INDICES_PER_FEATURE,
+        InputFeatureSetType::HalfKatMirror => HalfKatCuda::INDICES_PER_FEATURE,
         InputFeatureSetType::Board768Cuda => Board768Cuda::INDICES_PER_FEATURE,
         InputFeatureSetType::HalfKpCuda => HalfKpCuda::INDICES_PER_FEATURE,
         InputFeatureSetType::HalfKaCuda => HalfKaCuda::INDICES_PER_FEATURE,
-        InputFeatureSetType::HalfKaTCuda => HalfKaTCuda::INDICES_PER_FEATURE,
-        InputFeatureSetType::HalfKaTMirrorCuda => HalfKaTMirrorCuda::INDICES_PER_FEATURE,
+        InputFeatureSetType::HalfKatCuda => HalfKatCuda::INDICES_PER_FEATURE,
+        InputFeatureSetType::HalfKatMirrorCuda => HalfKatMirrorCuda::INDICES_PER_FEATURE,
+        InputFeatureSetType::HalfKaxtMirror => HalfKaxtMirrorCuda::INDICES_PER_FEATURE,
+        InputFeatureSetType::HalfKaxtMirrorCuda => HalfKaxtMirrorCuda::INDICES_PER_FEATURE,
+        InputFeatureSetType::HalfKatoMirror => HalfKatoMirror::INDICES_PER_FEATURE,
+        InputFeatureSetType::HalfKatoMirrorCuda => HalfKatoMirrorCuda::INDICES_PER_FEATURE,
     };
     indices_per_feature as u32
 }
@@ -140,9 +153,9 @@ pub unsafe extern "C" fn read_batch_into(
         InputFeatureSetType::Board768 => data_loader::read_batch_into::<Board768>(reader, batch),
         InputFeatureSetType::HalfKp => data_loader::read_batch_into::<HalfKp>(reader, batch),
         InputFeatureSetType::HalfKa => data_loader::read_batch_into::<HalfKa>(reader, batch),
-        InputFeatureSetType::HalfKaT => data_loader::read_batch_into::<HalfKaT>(reader, batch),
-        InputFeatureSetType::HalfKaTMirror => {
-            data_loader::read_batch_into::<HalfKaTMirror>(reader, batch)
+        InputFeatureSetType::HalfKat => data_loader::read_batch_into::<HalfKat>(reader, batch),
+        InputFeatureSetType::HalfKatMirror => {
+            data_loader::read_batch_into::<HalfKatMirror>(reader, batch)
         }
         InputFeatureSetType::Board768Cuda => {
             data_loader::read_batch_into::<Board768Cuda>(reader, batch)
@@ -153,11 +166,23 @@ pub unsafe extern "C" fn read_batch_into(
         InputFeatureSetType::HalfKaCuda => {
             data_loader::read_batch_into::<HalfKaCuda>(reader, batch)
         }
-        InputFeatureSetType::HalfKaTCuda => {
-            data_loader::read_batch_into::<HalfKaTCuda>(reader, batch)
+        InputFeatureSetType::HalfKatCuda => {
+            data_loader::read_batch_into::<HalfKatCuda>(reader, batch)
         }
-        InputFeatureSetType::HalfKaTMirrorCuda => {
-            data_loader::read_batch_into::<HalfKaTMirrorCuda>(reader, batch)
+        InputFeatureSetType::HalfKatMirrorCuda => {
+            data_loader::read_batch_into::<HalfKatMirrorCuda>(reader, batch)
+        }
+        InputFeatureSetType::HalfKaxtMirror => {
+            data_loader::read_batch_into::<HalfKaxtMirror>(reader, batch)
+        }
+        InputFeatureSetType::HalfKaxtMirrorCuda => {
+            data_loader::read_batch_into::<HalfKaxtMirrorCuda>(reader, batch)
+        }
+        InputFeatureSetType::HalfKatoMirror => {
+            data_loader::read_batch_into::<HalfKatoMirror>(reader, batch)
+        }
+        InputFeatureSetType::HalfKatoMirrorCuda => {
+            data_loader::read_batch_into::<HalfKatoMirrorCuda>(reader, batch)
         }
     }
 }

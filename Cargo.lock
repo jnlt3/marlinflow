@@ -326,6 +326,7 @@ dependencies = [
  "cozy-chess",
  "cozy-syzygy",
  "marlinformat 0.1.0",
+ "rand",
  "rayon",
 ]
 
@@ -456,6 +457,7 @@ dependencies = [
  "bytemuck",
  "cozy-chess",
  "marlinformat 0.1.0 (git+https://github.com/jnlt3/marlinflow)",
+ "rand",
 ]
 
 [[package]]

@@ -38,7 +38,6 @@ class NnHalfKP(torch.nn.Module):
         self.out = torch.nn.Linear(ft_out * 2, 1)
 
     def forward(self, batch: Batch):
-
         stm_indices = batch.stm_indices.reshape(-1, 2).T
         nstm_indices = batch.nstm_indices.reshape(-1, 2).T
         board_stm_sparse = torch.sparse_coo_tensor(
@@ -222,10 +221,12 @@ class NnBm(torch.nn.Module):
         super().__init__()
         from cudasparse import DoubleFeatureTransformerSlice
 
-        self.max_features = InputFeatureSet.HALF_KA_T_CUDA.max_features()
-        self.ft = DoubleFeatureTransformerSlice(57344, ft_out)
-        self.fft = DoubleFeatureTransformerSlice(896, ft_out)
-        self.out = torch.nn.Linear(ft_out * 2, 8)
+        self.factorizer_size = 896
+        self.max_features = InputFeatureSet.HALF_KAT_MIRROR_CUDA.max_features()
+
+        self.ft = DoubleFeatureTransformerSlice(57344 // 2, ft_out)
+        self.fft = DoubleFeatureTransformerSlice(self.factorizer_size, ft_out)
+        self.out = torch.compile(torch.nn.Linear(ft_out * 2, 8))
 
     def forward(self, batch: Batch):
         values = batch.values.reshape(-1, self.max_features)
@@ -241,10 +242,17 @@ class NnBm(torch.nn.Module):
             nstm_indices,
             values,
         )
+        
         v_stm_ft, v_nstm_ft = self.fft(
-            stm_indices.fmod(896), values, nstm_indices.fmod(896), values
+            stm_indices.fmod(self.factorizer_size),
+            values,
+            nstm_indices.fmod(self.factorizer_size),
+            values,
         )
+        return self.rest(stm_ft, nstm_ft, v_stm_ft, v_nstm_ft, batch)
 
+    @torch.compile
+    def rest(self, stm_ft, nstm_ft, v_stm_ft, v_nstm_ft, batch: Batch):
         hidden = (
             torch.clamp(
                 torch.cat((stm_ft + v_stm_ft, nstm_ft + v_nstm_ft), dim=1), 0, 1
@@ -252,9 +260,10 @@ class NnBm(torch.nn.Module):
             ** 2
         )
 
-        return torch.sum(torch.sigmoid(self.out(hidden)) * batch.mask, dim=1).unsqueeze(
+        return torch.sum(torch.sigmoid(self.out(hidden)) * batch.mask, 1).unsqueeze(
             1
         )
 
+
     def input_feature_set(self) -> InputFeatureSet:
-        return InputFeatureSet.HALF_KA_T_CUDA
+        return InputFeatureSet.HALF_KAT_MIRROR_CUDA

@@ -4,7 +4,7 @@ use crate::batch::EntryFeatureWriter;
 
 use super::InputFeatureSet;
 
-pub fn threats(board: &Board, threats_of: Color) -> BitBoard {
+pub fn threats(board: &Board, threats_of: Color) -> (BitBoard, BitBoard) {
     let occupied = board.occupied();
     let color = board.colors(threats_of);
     let n_color = board.colors(!threats_of);
@@ -38,14 +38,25 @@ pub fn threats(board: &Board, threats_of: Color) -> BitBoard {
         rook_attacks |= cozy_chess::get_rook_moves(rook, occupied);
     }
 
-    ((pawn_attacks & pieces) | (minor_attacks & majors) | (rook_attacks & queens)) & n_color
+    let mut queen_attacks = BitBoard::EMPTY;
+    for queen in queens & color {
+        queen_attacks |= cozy_chess::get_bishop_moves(queen, occupied)
+            | cozy_chess::get_rook_moves(queen, occupied);
+    }
+
+    let king_surround = cozy_chess::get_king_moves(board.king(!threats_of));
+    let threats =
+        ((pawn_attacks & pieces) | (minor_attacks & majors) | (rook_attacks & queens)) & n_color;
+
+    let offense = king_surround & minor_attacks;
+    (threats, offense)
 }
 
-pub struct HalfKatMirror;
-pub struct HalfKatMirrorCuda;
+pub struct HalfKatoMirror;
+pub struct HalfKatoMirrorCuda;
 
-impl InputFeatureSet for HalfKatMirror {
-    const MAX_FEATURES: usize = 64;
+impl InputFeatureSet for HalfKatoMirror {
+    const MAX_FEATURES: usize = 80;
     const INDICES_PER_FEATURE: usize = 2;
 
     fn add_features(board: Board, entry: EntryFeatureWriter) {
@@ -56,7 +67,7 @@ impl InputFeatureSet for HalfKatMirror {
         let nstm_king = board.king(!stm);
 
         for &color in &Color::ALL {
-            let threats = threats(&board, !color);
+            let (threats, offense) = threats(&board, !color);
             for &piece in &Piece::ALL {
                 for square in board.pieces(piece) & board.colors(color) {
                     let stm_feature = feature(stm, stm_king, color, piece, square);
@@ -65,16 +76,21 @@ impl InputFeatureSet for HalfKatMirror {
                 }
             }
             for square in threats {
-                let stm_feature = threat_feature(stm, stm_king, color, square);
-                let nstm_feature = threat_feature(!stm, nstm_king, color, square);
+                let stm_feature = extra_feature(stm, stm_king, color, square, 0);
+                let nstm_feature = extra_feature(!stm, nstm_king, color, square, 0);
+                sparse_entry.add_feature(stm_feature as i64, nstm_feature as i64);
+            }
+            for square in offense {
+                let stm_feature = extra_feature(stm, stm_king, color, square, 1);
+                let nstm_feature = extra_feature(!stm, nstm_king, color, square, 1);
                 sparse_entry.add_feature(stm_feature as i64, nstm_feature as i64);
             }
         }
     }
 }
 
-impl InputFeatureSet for HalfKatMirrorCuda {
-    const MAX_FEATURES: usize = 64;
+impl InputFeatureSet for HalfKatoMirrorCuda {
+    const MAX_FEATURES: usize = 80;
     const INDICES_PER_FEATURE: usize = 1;
 
     fn add_features(board: Board, entry: EntryFeatureWriter) {
@@ -85,7 +101,7 @@ impl InputFeatureSet for HalfKatMirrorCuda {
         let nstm_king = board.king(!stm);
 
         for &color in &Color::ALL {
-            let threats = threats(&board, !color);
+            let (threats, offense) = threats(&board, !color);
             for &piece in &Piece::ALL {
                 for square in board.pieces(piece) & board.colors(color) {
                     let stm_feature = feature(stm, stm_king, color, piece, square);
@@ -94,8 +110,13 @@ impl InputFeatureSet for HalfKatMirrorCuda {
                 }
             }
             for square in threats {
-                let stm_feature = threat_feature(stm, stm_king, color, square);
-                let nstm_feature = threat_feature(!stm, nstm_king, color, square);
+                let stm_feature = extra_feature(stm, stm_king, color, square, 0);
+                let nstm_feature = extra_feature(!stm, nstm_king, color, square, 0);
+                cuda_entry.add_feature(stm_feature as i64, nstm_feature as i64);
+            }
+            for square in offense {
+                let stm_feature = extra_feature(stm, stm_king, color, square, 1);
+                let nstm_feature = extra_feature(!stm, nstm_king, color, square, 1);
                 cuda_entry.add_feature(stm_feature as i64, nstm_feature as i64);
             }
         }
@@ -105,7 +126,7 @@ impl InputFeatureSet for HalfKatMirrorCuda {
 fn king_square_to_index(sq: Square) -> usize {
     sq.file() as usize * 8 + sq.rank() as usize
 }
- 
+
 fn feature(perspective: Color, king: Square, color: Color, piece: Piece, square: Square) -> usize {
     let flip_file = (king.file() as usize) > File::D as usize;
     let (mut king, mut square, color) = match perspective {
@@ -119,12 +140,18 @@ fn feature(perspective: Color, king: Square, color: Color, piece: Piece, square:
     let mut index = 0;
     index = index * Square::NUM / 2 + king_square_to_index(king);
     index = index * Color::NUM + color as usize;
-    index = index * (Piece::NUM + 1) + piece as usize;
+    index = index * (Piece::NUM + 2) + piece as usize;
     index = index * Square::NUM + square as usize;
     index
 }
 
-fn threat_feature(perspective: Color, king: Square, color: Color, square: Square) -> usize {
+fn extra_feature(
+    perspective: Color,
+    king: Square,
+    color: Color,
+    square: Square,
+    extra: usize,
+) -> usize {
     let flip_file = (king.file() as usize) > File::D as usize;
     let (mut king, mut square, color) = match perspective {
         Color::White => (king, square, color),
@@ -137,7 +164,7 @@ fn threat_feature(perspective: Color, king: Square, color: Color, square: Square
     let mut index = 0;
     index = index * Square::NUM / 2 + king_square_to_index(king);
     index = index * Color::NUM + color as usize;
-    index = index * (Piece::NUM + 1) + Piece::NUM;
+    index = index * (Piece::NUM + 2) + Piece::NUM + extra;
     index = index * Square::NUM + square as usize;
     index
 }

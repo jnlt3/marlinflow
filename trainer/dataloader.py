@@ -44,13 +44,17 @@ class InputFeatureSet(IntEnum):
     BOARD_768 = 0
     HALF_KP = 1
     HALF_KA = 2
-    HALF_KA_T = 3
-    HALF_KA_T_MIRROR = 4
-    BOARD_768_CUDA = 5
-    HALF_KP_CUDA = 6
-    HALF_KA_CUDA = 7
-    HALF_KA_T_CUDA = 8
-    HALF_KA_T_MIRROR_CUDA = 9
+    HALF_KAT = 3
+    HALF_KAT_MIRROR = 4
+    HALF_KAxT_MIRROR = 5
+    BOARD_768_CUDA = 6
+    HALF_KP_CUDA = 7
+    HALF_KA_CUDA = 8
+    HALF_KAT_CUDA = 9
+    HALF_KAT_MIRROR_CUDA = 10
+    HALF_KAxT_MIRROR_CUDA = 11
+    HALF_KATO_MIRROR = 12
+    HALF_KATO_MIRROR_CUDA = 13
 
     def max_features(self) -> int:
         return PARSE_LIB.input_feature_set_get_max_features(self)
@@ -128,8 +132,8 @@ class ParserBatch:
     def to_pytorch_batch(self, device: torch.device) -> Batch:
         def to_pytorch(array: np.ndarray) -> torch.Tensor:
             tch_array = torch.from_numpy(array)
-            if torch.cuda.is_available():
-                tch_array = tch_array.pin_memory()
+            #if torch.cuda.is_available():
+            #    tch_array = tch_array.pin_memory()
             return tch_array.to(device, non_blocking=True)
 
         total_features = self.get_total_features()

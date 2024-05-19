@@ -53,6 +53,8 @@ def train(
     clipper = WeightClipper()
     running_loss = torch.zeros((1,), device=DEVICE)
     start_time = time()
+    run_start_time = time()
+    run_fens = 0
     iterations = 0
 
     loss_since_log = torch.zeros((1,), device=DEVICE)
@@ -61,13 +63,20 @@ def train(
     fens = 0
     epoch = 0
 
+
     while epoch < epochs:
         new_epoch, batch = dataloader.read_batch(DEVICE)
         if new_epoch:
             epoch += 1
             if epoch == lr_drop:
-                for param_group in optimizer.param_groups:
+                wdl = 0.2
+                for id, param_group in enumerate(optimizer.param_groups):
                     param_group["lr"] *= 0.1
+                    if id == 1:
+                        # Extra Drop Factorizer LR
+                        param_group["lr"] *= 0.5
+
+
             print(
                 f"epoch {epoch}",
                 f"epoch train loss: {running_loss.item() / iterations}",
@@ -81,19 +90,18 @@ def train(
             fens = 0
 
             if epoch % save_epochs == 0:
-                torch.save(model.state_dict(), f"nn/{train_id}_{epoch}")
                 param_map = {
                     name: param.detach().cpu().numpy().tolist()
                     for name, param in model.named_parameters()
                 }
-                with open(f"nn/{train_id}.json", "w") as json_file:
+                with open(f"nn/{train_id}_{epoch}.json", "w") as json_file:
                     json.dump(param_map, json_file)
 
         optimizer.zero_grad()
         prediction = model(batch)
         expected = torch.sigmoid(batch.cp / scale) * (1 - wdl) + batch.wdl * wdl
 
-        loss = torch.mean((prediction - expected) ** 2)
+        loss = torch.mean(torch.abs(prediction - expected) ** 2.5)
         loss.backward()
         optimizer.step()
         model.apply(clipper)
@@ -104,6 +112,7 @@ def train(
         iterations += 1
         iter_since_log += 1
         fens += batch.size
+        run_fens += batch.size
 
         if iter_since_log * batch.size > LOG_ITERS:
             loss = loss_since_log.item() / iter_since_log
@@ -111,7 +120,13 @@ def train(
                 f"At {iterations * batch.size} positions",
                 f"Running Loss: {loss}",
                 sep=os.linesep,
+            )            
+            print(
+                f"pos/s: {run_fens / (time() - run_start_time)}",
+                sep=os.linesep,
             )
+            run_start_time = time()
+            run_fens = 0
             if train_log is not None:
                 train_log.update(loss)
                 train_log.save()
@@ -120,7 +135,6 @@ def train(
 
 
 def main():
-
     parser = argparse.ArgumentParser(description="")
 
     parser.add_argument(
@@ -150,13 +164,18 @@ def main():
     assert args.scale is not None
 
     train_log = TrainLog(args.train_id)
+    
+    torch.set_float32_matmul_precision('high')
+    model = NnBm(512).to(DEVICE)
 
-    model = NnBm(384).to(DEVICE)
+    for name, _ in model.named_parameters():
+        print(name)     
+    # model = torch.compile(model_)
 
     """
     optim = Adam(
     [
-        {"params": model.fc.parameters(), "lr": 1e-3},
+        {"params": model.fc.parhyameters(), "lr": 1e-3},
         {"params": model.agroupoflayer.parameters()},
         {"params": model.lastlayer.parameters(), "lr": 4e-2},
     ],
@@ -171,12 +190,11 @@ def main():
     optimizer = pytorch_ranger.Ranger(
         [
             {"params": model.ft.parameters()},
-            {"params": model.fft.parameters()},
+            {"params": model.fft.parameters(), "lr": args.lr},
             {"params": model.out.parameters(), "lr": args.lr * 2},
         ],
         lr=args.lr,
     )
-
 
     train(
         model,

@@ -12,9 +12,9 @@ pub struct HalfKp {
     v_weights: Box<[Box<[f32]>]>,
     #[serde(rename = "fft.bias")]
     v_bias: Box<[f32]>,
-    #[serde(rename = "out.weight")]
+    #[serde(rename = "out._orig_mod.weight")]
     out_weights: Box<[Box<[f32]>]>,
-    #[serde(rename = "out.bias")]
+    #[serde(rename = "out._orig_mod.bias")]
     out_bias: Box<[f32]>,
 }
 
@@ -33,7 +33,7 @@ impl HalfKp {
         let mut summed_bias = self.feature_bias.clone();
 
         let planes = summed_weights.len() / self.v_weights.len();
-        assert_eq!(planes, 64);
+        assert_eq!(planes, 32);
         for i in 0..planes {
             for j in 0..self.v_weights.len() {
                 assert_eq!(self.v_weights[0].len(), summed_weights[0].len());

@@ -19,7 +19,7 @@ def _read_file(path: str) -> tuple[list[int], list[float]]:
                 continue
             epochs.append(int(match.group(1)))
             losses.append(float(match.group(2)))
-    return epochs, losses
+    return epochs[600:-1:5], losses[600:-1:5]
 
 
 def main():
