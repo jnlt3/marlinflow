@@ -1,5 +1,5 @@
 python3 main.py --data-root ../data/merge5k/ \
---train-id proc-1-3B \
+--train-id proc-9-4100M \
 --lr 5e-3 \
 --lr-drop 4 \
 --epochs 12 \
