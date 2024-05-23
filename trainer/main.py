@@ -74,7 +74,7 @@ def train(
                     param_group["lr"] *= 0.1
                     if id == 1:
                         # Extra Drop Factorizer LR
-                        param_group["lr"] *= 0.5
+                        param_group["lr"] *= 0.25
 
 
             print(
