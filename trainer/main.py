@@ -166,7 +166,7 @@ def main():
     train_log = TrainLog(args.train_id)
     
     torch.set_float32_matmul_precision('high')
-    model = NnBm(512).to(DEVICE)
+    model = NnBm(768).to(DEVICE)
 
     for name, _ in model.named_parameters():
         print(name)     
