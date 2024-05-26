@@ -226,7 +226,7 @@ class NnBm(torch.nn.Module):
 
         self.ft = DoubleFeatureTransformerSlice(57344 // 2, ft_out)
         self.fft = DoubleFeatureTransformerSlice(self.factorizer_size, ft_out)
-        self.out = torch.compile(torch.nn.Linear(ft_out * 2, 8))
+        self.out = torch.nn.Linear(ft_out * 2, 8)
 
     def forward(self, batch: Batch):
         values = batch.values.reshape(-1, self.max_features)
@@ -251,7 +251,6 @@ class NnBm(torch.nn.Module):
         )
         return self.rest(stm_ft, nstm_ft, v_stm_ft, v_nstm_ft, batch)
 
-    @torch.compile
     def rest(self, stm_ft, nstm_ft, v_stm_ft, v_nstm_ft, batch: Batch):
         hidden = (
             torch.clamp(
